@@ -1,4 +1,7 @@
-﻿using System;
+﻿// ============================================================================
+// S E T T I N G S
+// ============================================================================
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,12 +28,17 @@ namespace TCore.Settings
             public object oref;
             public object oDefault;
 
-            public SettingsElt(string s, Type typ, object o, object oDef)
+            public SettingsElt(string sRegistryPath, Type typ, object oRefToSync, object oDefault)
             {
-                sRePath = s;
+                sRePath = sRegistryPath;
                 type = typ;
-                oref = o;
-                oDefault = oDef;
+                oref = oRefToSync;
+                this.oDefault = oDefault;
+            }
+
+            public SettingsElt Clone()
+            {
+                return new SettingsElt(sRePath, type, oref, oDefault);
             }
         };
 
@@ -56,17 +64,63 @@ namespace TCore.Settings
             return (string) OFindValue(sKey);
         }
 
-        public void SetSValue(string sKey, string sValue)
+        public bool FValue(string sKey)
+        {
+            object o = OFindValue(sKey);
+
+            string sValue;
+
+            if (o is bool)
+                sValue = ((bool) o).ToString();
+            else if (o is int)
+                sValue = ((int) o).ToString();
+            else
+                sValue = (string) o;
+
+            if (String.Compare(sValue, "true", true) == 0
+                || String.Compare(sValue, "1") == 0)
+                return true;
+            else
+                return false;
+        }
+
+        int IFindKey(string sKey)
         {
             for (int i = 0; i < m_rgstee.Length; i++)
                 {
                 if (string.Compare(m_rgstee[i].sRePath, sKey) == 0)
                     {
-                    m_rgstee[i].oref = sValue;
-                    return;
+                    return i;
                     }
                 }
-            throw new Exception("could not find given key");
+            return -1;
+        }
+
+        public void SetSValue(string sKey, string sValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = sValue;
+            else
+                throw new Exception("could not find given key");
+        }
+
+        public void SetNValue(string sKey, int nValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = nValue;
+            else
+                throw new Exception("could not find given key");
+        }
+
+        public void SetFValue(string sKey, bool fValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = fValue;
+            else
+                throw new Exception("could not find given key");
         }
 
         public Int16 WValue(string sKey)
@@ -88,6 +142,8 @@ namespace TCore.Settings
         private string m_sRoot;
         private string m_sTag;
 
+        public string Tag => m_sTag;
+
         public bool FMatchesTag(string sTag)
         {
             return String.Compare(sTag, m_sTag) == 0;
@@ -95,12 +151,16 @@ namespace TCore.Settings
 
         public Settings(SettingsElt[] rgstee, string sReRoot, string sTag)
         {
-            m_rgstee = rgstee;
+            m_rgstee = new SettingsElt[rgstee.Length];
+
+            for (int i = 0; i < rgstee.Length; i++)
+                m_rgstee[i] = rgstee[i].Clone();
+
             m_sRoot = sReRoot;
             m_sTag = sTag;
         }
 
-        static RegistryKey RkEnsure(string sRoot)
+        public static RegistryKey RkEnsure(string sRoot)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey(sRoot, true);
 
@@ -169,11 +229,21 @@ namespace TCore.Settings
                         rk.SetValue(stee.sRePath, sT);
                         break;
                     case Type.Bool:
-                        nT = ((bool) oVal) ? 1 : 0;
+                        if (oVal is bool)
+                            nT = (bool)oVal ? 1 : 0;
+                        else
+                            {
+                            nT = ((bool) oVal) ? 1 : 0;
+                            }
                         rk.SetValue(stee.sRePath, nT, RegistryValueKind.DWord);
                         break;
                     case Type.Int:
-                        nT = Int32.Parse((string) oVal);
+                        if (oVal is int)
+                            nT = (int) oVal;
+                        else
+                            {
+                            nT = Int32.Parse((string) oVal);
+                            }
                         rk.SetValue(stee.sRePath, nT, RegistryValueKind.DWord);
                         break;
                     }
