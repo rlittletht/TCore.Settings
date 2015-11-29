@@ -172,18 +172,38 @@ namespace TCore.Settings
         {
             Settings ste = new Settings(new SettingsElt[]
                 {
+                new SettingsElt("TestRgString", Settings.Type.StrArray, new string[] {}, new string[] {}),
                 new SettingsElt("TestString1", Settings.Type.Str, "1", ""),
                 new SettingsElt("TestString2", Settings.Type.Str, "2", ""),
-                new SettingsElt("TestInt161", Settings.Type.Int, (Int16) 1, ""),
+//                new SettingsElt("TestInt161", Settings.Type.Int, (Int16) 1, ""),
                 new SettingsElt("TestInt321", Settings.Type.Int, (Int32) 2, ""),
                 new SettingsElt("TestDttm1", Settings.Type.Dttm, DateTime.Parse("1/1/1901"), ""),
                 },
                                         "__UnitTestTest_TcoreSettings__", "tag");
+            ste.SetRgsValue("TestRgString", new string[] {"one", "two"});
 
+            string[] rgs = ste.RgsValue("TestRgString");
+            Assert.AreEqual("one", rgs[0]);
+            Assert.AreEqual("two", rgs[1]);
             Assert.AreEqual("1", ste.SValue("TestString1"));
-            Assert.AreEqual(1, ste.WValue("TestInt161"));
+            //Assert.AreEqual(1, ste.WValue("TestInt161"));
             Assert.AreEqual(2, ste.NValue("TestInt321"));
             Assert.AreEqual(DateTime.Parse("1/1/1901"), ste.DttmValue("TestDttm1"));
+
+            ste.Save();
+            ste.SetRgsValue("TestRgString", new string[] { "one1", "two1" });
+
+            rgs = ste.RgsValue("TestRgString");
+            Assert.AreEqual("one1", rgs[0]);
+            Assert.AreEqual("two1", rgs[1]);
+            ste.Load();
+            rgs = ste.RgsValue("TestRgString");
+            Assert.AreEqual("one", rgs[0]);
+            Assert.AreEqual("two", rgs[1]);
+
+            RegistryKey rk;
+
+            Registry.CurrentUser.DeleteSubKeyTree("__UnitTestTest_TcoreSettings__");
         }
 
     }

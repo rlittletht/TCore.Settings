@@ -19,6 +19,7 @@ namespace TCore.Settings
             Str = 2,
             Int = 3,
             Dttm = 4,
+            StrArray = 5
         };
 
         public struct SettingsElt // STEE
@@ -64,6 +65,10 @@ namespace TCore.Settings
             return (string) OFindValue(sKey);
         }
 
+        public string[] RgsValue(string sKey)
+        {
+            return (string[]) OFindValue(sKey);
+        }
         public bool FValue(string sKey)
         {
             object o = OFindValue(sKey);
@@ -94,6 +99,15 @@ namespace TCore.Settings
                     }
                 }
             return -1;
+        }
+
+        public void SetRgsValue(string sKey, string[] rgsValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = rgsValue;
+            else
+                throw new Exception("could not find given key");
         }
 
         public void SetSValue(string sKey, string sValue)
@@ -197,7 +211,7 @@ namespace TCore.Settings
                     {
                     oVal = ((System.Windows.Forms.DateTimePicker) oref).Value;
                     }
-                else if (oref is string || oref is Int32 || oref is DateTime || oref is bool || oref is Int16)
+                else if (oref is string || oref is Int32 || oref is DateTime || oref is bool || oref is Int16 || oref is string[])
                     {
                     oVal = oref;
                     }
@@ -216,10 +230,17 @@ namespace TCore.Settings
                 {
                 object oVal = OFromOref(stee.oref);
 
+                if (oVal == null)
+                    continue;
+
                 int nT;
 
                 switch (stee.type)
                     {
+                    case Type.StrArray:
+                        string[] rgs = (string[])oVal;
+                        rk.SetValue(stee.sRePath, rgs, RegistryValueKind.MultiString);
+                        break;
                     case Type.Dttm:
                         DateTime dttm = (DateTime) oVal;
                         rk.SetValue(stee.sRePath, dttm.ToString());
@@ -254,6 +275,7 @@ namespace TCore.Settings
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey(m_sRoot);
             string sVal = "";
+            string[] rgs = null;
             DateTime dttmVal = DateTime.Today;
             int nVal = 0;
             bool fVal = false;
@@ -269,28 +291,20 @@ namespace TCore.Settings
 
                 switch (rehe.type)
                     {
+                    case Type.StrArray:
+                        rgs = (string[]) rk.GetValue(rehe.sRePath, rehe.oDefault);
+                        break;
                     case Type.Dttm:
                         sT = (string) rk.GetValue(rehe.sRePath, rehe.oDefault);
                         sVal = sT;
-                        try
-                            {
-                            dttmVal = DateTime.Parse(sT);
-                            }
-                        catch
-                            {
-                            }
+                        DateTime.TryParse(sT, out dttmVal);
                         break;
                     case Type.Str:
                         sT = (string) rk.GetValue(rehe.sRePath, rehe.oDefault);
                         sVal = sT;
-                        try
-                            {
-                            nVal = Int32.Parse(sT);
-                            }
-                        catch
-                            {
+
+                        if (!Int32.TryParse(sT, out nVal))
                             nVal = 0;
-                            }
                         break;
                     case Type.Bool:
                         nT = (int) rk.GetValue(rehe.sRePath, rehe.oDefault);
@@ -322,6 +336,10 @@ namespace TCore.Settings
                 else if (rehe.oref is System.Windows.Forms.DateTimePicker)
                     {
                     ((System.Windows.Forms.DateTimePicker) rehe.oref).Value = dttmVal;
+                    }
+                else if (rehe.oref is string[])
+                    {
+                    m_rgstee[i].oref = rgs;
                     }
                 else if (rehe.oref is string)
                     {
