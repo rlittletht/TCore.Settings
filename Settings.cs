@@ -242,7 +242,19 @@ namespace TCore.Settings
                         rk.SetValue(stee.sRePath, rgs, RegistryValueKind.MultiString);
                         break;
                     case Type.Dttm:
-                        DateTime dttm = (DateTime) oVal;
+                        DateTime dttm;
+                        if (oVal is string)
+                            {
+                            if (String.IsNullOrEmpty((string) oVal))
+                                {
+                                dttm = DateTime.Now;
+                                dttm = new DateTime(dttm.Year, dttm.Month, dttm.Day, dttm.Hour, 0, 0);
+                                }
+                            else
+                                dttm = DateTime.Parse((string) oVal);
+                            }
+                        else
+                            dttm = (DateTime) oVal;
                         rk.SetValue(stee.sRePath, dttm.ToString());
                         break;
                     case Type.Str:
