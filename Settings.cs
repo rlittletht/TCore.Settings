@@ -11,8 +11,14 @@ using Microsoft.Win32;
 
 namespace TCore.Settings
 {
-    public partial class Settings  //STE
+    public partial class Settings //STE
     {
+        #region Data model
+
+        private SettingsElt[] m_rgstee;
+        private string m_sRoot;
+        private string m_sTag;
+
         public enum Type
         {
             Bool = 1,
@@ -43,185 +49,17 @@ namespace TCore.Settings
             }
         };
 
-        /* O  F I N D  V A L U E */
+        #endregion
+
+        #region Public I/O Methods
+
+        /* S A V E */
         /*----------------------------------------------------------------------------
-        	%%Function: OFindValue
-        	%%Qualified: TCore.Settings.Settings.OFindValue
+        	%%Function: Save
+        	%%Qualified: TCore.Settings.Settings.Save
         	%%Contact: rlittle
         	
         ----------------------------------------------------------------------------*/
-        object OFindValue(string sKey)
-        {
-            foreach (SettingsElt stee in m_rgstee)
-                {
-                if (string.Compare(stee.sRePath, sKey) == 0)
-                    return stee.oref;
-                }
-            return null;
-        }
-
-        public string SValue(string sKey)
-        {
-            return (string) OFindValue(sKey);
-        }
-
-        public string[] RgsValue(string sKey)
-        {
-            return (string[]) OFindValue(sKey);
-        }
-        public bool FValue(string sKey)
-        {
-            object o = OFindValue(sKey);
-
-            string sValue;
-
-            if (o is bool)
-                sValue = ((bool) o).ToString();
-            else if (o is int)
-                sValue = ((int) o).ToString();
-            else
-                sValue = (string) o;
-
-            if (String.Compare(sValue, "true", true) == 0
-                || String.Compare(sValue, "1") == 0)
-                return true;
-            else
-                return false;
-        }
-
-        int IFindKey(string sKey)
-        {
-            for (int i = 0; i < m_rgstee.Length; i++)
-                {
-                if (string.Compare(m_rgstee[i].sRePath, sKey) == 0)
-                    {
-                    return i;
-                    }
-                }
-            return -1;
-        }
-
-        public void SetRgsValue(string sKey, string[] rgsValue)
-        {
-            int i = IFindKey(sKey);
-            if (i != -1)
-                m_rgstee[i].oref = rgsValue;
-            else
-                throw new Exception("could not find given key");
-        }
-
-        public void SetSValue(string sKey, string sValue)
-        {
-            int i = IFindKey(sKey);
-            if (i != -1)
-                m_rgstee[i].oref = sValue;
-            else
-                throw new Exception("could not find given key");
-        }
-
-        public void SetNValue(string sKey, int nValue)
-        {
-            int i = IFindKey(sKey);
-            if (i != -1)
-                m_rgstee[i].oref = nValue;
-            else
-                throw new Exception("could not find given key");
-        }
-
-        public void SetFValue(string sKey, bool fValue)
-        {
-            int i = IFindKey(sKey);
-            if (i != -1)
-                m_rgstee[i].oref = fValue;
-            else
-                throw new Exception("could not find given key");
-        }
-
-        public Int16 WValue(string sKey)
-        {
-            return (Int16) OFindValue(sKey);
-        }
-
-        public Int32 NValue(string sKey)
-        {
-            return (Int32) OFindValue(sKey);
-        }
-
-        public DateTime DttmValue(string sKey)
-        {
-            return (DateTime) OFindValue(sKey);
-        }
-
-        private SettingsElt[] m_rgstee;
-        private string m_sRoot;
-        private string m_sTag;
-
-        public string Tag => m_sTag;
-
-        public bool FMatchesTag(string sTag)
-        {
-            return String.Compare(sTag, m_sTag) == 0;
-        }
-
-        public Settings(SettingsElt[] rgstee, string sReRoot, string sTag)
-        {
-            m_rgstee = new SettingsElt[rgstee.Length];
-
-            for (int i = 0; i < rgstee.Length; i++)
-                m_rgstee[i] = rgstee[i].Clone();
-
-            m_sRoot = sReRoot;
-            m_sTag = sTag;
-        }
-
-        public static RegistryKey RkEnsure(string sRoot)
-        {
-            RegistryKey rk = Registry.CurrentUser.OpenSubKey(sRoot, true);
-
-            if (rk == null)
-                {
-                rk = Registry.CurrentUser.CreateSubKey(sRoot);
-                if (rk == null)
-                    return null;
-                }
-            return rk;
-        }
-
-        object OFromOref(object oref)
-        {
-            object oVal;
-
-                if (oref is System.Windows.Forms.TextBox)
-                    {
-                    oVal = ((System.Windows.Forms.TextBox) oref).Text;
-                    }
-                else if (oref is System.Windows.Forms.ComboBox)
-                    {
-                    oVal = ((System.Windows.Forms.ComboBox) oref).Text;
-                    }
-                else if (oref is System.Windows.Forms.ListBox)
-                    {
-                    oVal = ((System.Windows.Forms.ListBox) oref).Text;
-                    }
-                else if (oref is System.Windows.Forms.CheckBox)
-                    {
-                    oVal = ((System.Windows.Forms.CheckBox) oref).Checked;
-                    }
-                else if (oref is System.Windows.Forms.DateTimePicker)
-                    {
-                    oVal = ((System.Windows.Forms.DateTimePicker) oref).Value;
-                    }
-                else if (oref is string || oref is Int32 || oref is DateTime || oref is bool || oref is Int16 || oref is string[])
-                    {
-                    oVal = oref;
-                    }
-                else
-                    {
-                    oVal = null;
-                    }
-            return oVal;
-        }
-
         public void Save()
         {
             RegistryKey rk = RkEnsure(m_sRoot);
@@ -238,7 +76,7 @@ namespace TCore.Settings
                 switch (stee.type)
                     {
                     case Type.StrArray:
-                        string[] rgs = (string[])oVal;
+                        string[] rgs = (string[]) oVal;
                         rk.SetValue(stee.sRePath, rgs, RegistryValueKind.MultiString);
                         break;
                     case Type.Dttm:
@@ -263,7 +101,7 @@ namespace TCore.Settings
                         break;
                     case Type.Bool:
                         if (oVal is bool)
-                            nT = (bool)oVal ? 1 : 0;
+                            nT = (bool) oVal ? 1 : 0;
                         else
                             {
                             nT = ((bool) oVal) ? 1 : 0;
@@ -283,6 +121,13 @@ namespace TCore.Settings
                 }
         }
 
+        /* L O A D */
+        /*----------------------------------------------------------------------------
+        	%%Function: Load
+        	%%Qualified: TCore.Settings.Settings.Load
+        	%%Contact: rlittle
+        	
+        ----------------------------------------------------------------------------*/
         public void Load()
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey(m_sRoot);
@@ -379,6 +224,212 @@ namespace TCore.Settings
                     throw (new Exception("Unkonwn control type in Settings.Save"));
                     }
                 }
+        }
+
+        #endregion
+
+        #region Public Value accessors
+
+        public string SValue(string sKey)
+        {
+            return (string) OFindValue(sKey);
+        }
+
+        public string[] RgsValue(string sKey)
+        {
+            return (string[]) OFindValue(sKey);
+        }
+        public bool FValue(string sKey)
+        {
+            object o = OFindValue(sKey);
+
+            string sValue;
+
+            if (o is bool)
+                sValue = ((bool) o).ToString();
+            else if (o is int)
+                sValue = ((int) o).ToString();
+            else
+                sValue = (string) o;
+
+            if (String.Compare(sValue, "true", true) == 0
+                || String.Compare(sValue, "1") == 0)
+                return true;
+            else
+                return false;
+        }
+
+        public void SetRgsValue(string sKey, string[] rgsValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = rgsValue;
+            else
+                throw new Exception("could not find given key");
+        }
+
+        public void SetSValue(string sKey, string sValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = sValue;
+            else
+                throw new Exception("could not find given key");
+        }
+
+        public void SetNValue(string sKey, int nValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = nValue;
+            else
+                throw new Exception("could not find given key");
+        }
+
+        public void SetFValue(string sKey, bool fValue)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = fValue;
+            else
+                throw new Exception("could not find given key");
+        }
+
+        public Int16 WValue(string sKey)
+        {
+            return (Int16) OFindValue(sKey);
+        }
+
+        public Int32 NValue(string sKey)
+        {
+            return (Int32) OFindValue(sKey);
+        }
+
+        public DateTime DttmValue(string sKey)
+        {
+            return (DateTime) OFindValue(sKey);
+        }
+
+        public bool FMatchesTag(string sTag)
+        {
+            return String.Compare(sTag, m_sTag) == 0;
+        }
+
+        public Settings(SettingsElt[] rgstee, string sReRoot, string sTag)
+        {
+            m_rgstee = new SettingsElt[rgstee.Length];
+
+            for (int i = 0; i < rgstee.Length; i++)
+                m_rgstee[i] = rgstee[i].Clone();
+
+            m_sRoot = sReRoot;
+            m_sTag = sTag;
+        }
+
+        public static RegistryKey RkEnsure(string sRoot)
+        {
+            RegistryKey rk = Registry.CurrentUser.OpenSubKey(sRoot, true);
+
+            if (rk == null)
+                {
+                rk = Registry.CurrentUser.CreateSubKey(sRoot);
+                if (rk == null)
+                    return null;
+                }
+            return rk;
+        }
+
+        public string Tag => m_sTag;
+
+        #endregion
+
+        #region Internals
+
+        /* O  F I N D  V A L U E */
+        /*----------------------------------------------------------------------------
+        	%%Function: OFindValue
+        	%%Qualified: TCore.Settings.Settings.OFindValue
+        	%%Contact: rlittle
+        	
+        ----------------------------------------------------------------------------*/
+        object OFindValue(string sKey)
+        {
+            foreach (SettingsElt stee in m_rgstee)
+                {
+                if (string.Compare(stee.sRePath, sKey) == 0)
+                    return stee.oref;
+                }
+            return null;
+        }
+
+        int IFindKey(string sKey)
+        {
+            for (int i = 0; i < m_rgstee.Length; i++)
+                {
+                if (string.Compare(m_rgstee[i].sRePath, sKey) == 0)
+                    {
+                    return i;
+                    }
+                }
+            return -1;
+        }
+
+        object OFromOref(object oref)
+        {
+            object oVal;
+
+            if (oref is System.Windows.Forms.TextBox)
+                {
+                oVal = ((System.Windows.Forms.TextBox) oref).Text;
+                }
+            else if (oref is System.Windows.Forms.ComboBox)
+                {
+                oVal = ((System.Windows.Forms.ComboBox) oref).Text;
+                }
+            else if (oref is System.Windows.Forms.ListBox)
+                {
+                oVal = ((System.Windows.Forms.ListBox) oref).Text;
+                }
+            else if (oref is System.Windows.Forms.CheckBox)
+                {
+                oVal = ((System.Windows.Forms.CheckBox) oref).Checked;
+                }
+            else if (oref is System.Windows.Forms.DateTimePicker)
+                {
+                oVal = ((System.Windows.Forms.DateTimePicker) oref).Value;
+                }
+            else if (oref is string || oref is Int32 || oref is DateTime || oref is bool || oref is Int16 || oref is string[])
+                {
+                oVal = oref;
+                }
+            else
+                {
+                oVal = null;
+                }
+            return oVal;
+        }
+
+        #endregion
+
+        /* R G S  G E T  S U B K E Y S */
+        /*----------------------------------------------------------------------------
+        	%%Function: RgsGetSubkeys
+        	%%Qualified: TCore.Settings.Settings.RgsGetSubkeys
+        	%%Contact: rlittle
+        	
+            return a simple list of the subkey names underneath this registry root
+        ----------------------------------------------------------------------------*/
+        public static string[] RgsGetSubkeys(string sRegRoot)
+        {
+            RegistryKey rk = Registry.CurrentUser.OpenSubKey(sRegRoot);
+
+            if (rk != null)
+                {
+                string[] rgs = rk.GetSubKeyNames();
+                rk.Close();
+                return rgs;
+                }
+            return null;
         }
     }
 }
