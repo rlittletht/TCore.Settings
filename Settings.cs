@@ -200,7 +200,14 @@ namespace TCore.Settings
                     }
                 else if (rehe.oref is string)
                     {
-                    m_rgstee[i].oref = (string) sVal;
+                    if (rehe.type == Type.Dttm)
+                        {
+                        m_rgstee[i].oref = dttmVal;
+                        }
+                    else
+                        {
+                        m_rgstee[i].oref = (string) sVal;
+                        }
                     }
                 else if (rehe.oref is Int32)
                     {
@@ -268,6 +275,17 @@ namespace TCore.Settings
                 throw new Exception("could not find given key");
         }
 
+        public void SetRgsValueFromEnumerable(string sKey, IEnumerable<string> iens)
+        {
+            string[] rgs = new string[iens.Count()];
+
+            int i = 0;
+            foreach (string s in iens)
+                rgs[i++] = s;
+
+            SetRgsValue(sKey, rgs);
+        }
+
         public void SetSValue(string sKey, string sValue)
         {
             int i = IFindKey(sKey);
@@ -275,6 +293,11 @@ namespace TCore.Settings
                 m_rgstee[i].oref = sValue;
             else
                 throw new Exception("could not find given key");
+        }
+
+        public void SetNValue(string sKey, string sNValue)
+        {
+            SetNValue(sKey, sNValue == null ? 0 : Int32.Parse(sNValue));
         }
 
         public void SetNValue(string sKey, int nValue)
@@ -286,6 +309,14 @@ namespace TCore.Settings
                 throw new Exception("could not find given key");
         }
 
+        public void SetDttmValue(string sKey, DateTime dttm)
+        {
+            int i = IFindKey(sKey);
+            if (i != -1)
+                m_rgstee[i].oref = dttm;
+            else
+                throw new Exception("could not find given key");
+        }
         public void SetFValue(string sKey, bool fValue)
         {
             int i = IFindKey(sKey);

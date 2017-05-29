@@ -206,5 +206,65 @@ namespace TCore.Settings
             Registry.CurrentUser.DeleteSubKeyTree("__UnitTestTest_TcoreSettings__");
         }
 
+        static void VerifyRgs(string[] rgsExpected, string[] rgsActual)
+        {
+            Assert.AreEqual(rgsExpected.Count(), rgsActual.Count());
+            for (int i = 0; i < rgsExpected.Length; i++)
+                Assert.AreEqual(rgsExpected[i], rgsActual[i]);
+        }
+
+        static Settings SteSetupForRgsTest()
+        {
+            return new Settings(new SettingsElt[]
+                                            {
+                                                new SettingsElt("StrArray", Settings.Type.StrArray, new string[] {}, new string[] {})
+                                            }, "__UnitTestTest_TCoreSettings__", "tag");
+        }
+
+        [Test]
+        public void TestSteDefaultRgs()
+        {
+            Settings ste = SteSetupForRgsTest();
+
+            string[] rgsOut = ste.RgsValue("StrArray");
+            Assert.AreEqual(0, rgsOut.Length);
+        }
+
+        [Test]
+        public void TestSetFromRgs()
+        {
+            Settings ste = SteSetupForRgsTest();
+
+            string[] rgsIn = {"one", "two", "three"};
+            string[] rgsOut = ste.RgsValue("StrArray");
+
+            ste.SetRgsValue("StrArray", rgsIn);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(rgsIn, rgsOut);
+        }
+        [Test]
+        public void TestSetFromEnumerable()
+        {
+            Settings ste = SteSetupForRgsTest();
+
+            string[] rgsIn = {"one", "two", "three"};
+            string[] rgsOut = ste.RgsValue("StrArray");
+
+            Dictionary<string, string> mp = new Dictionary<string, string>();
+            foreach (string s in rgsIn)
+                mp.Add(s, s);
+
+            ste.SetRgsValueFromEnumerable("StrArray", mp.Keys);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(mp.Keys.ToArray(), rgsOut);
+
+            ste.SetRgsValueFromEnumerable("StrArray", mp.Values);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(mp.Values.ToArray(), rgsOut);
+
+            ste.SetRgsValueFromEnumerable("StrArray", rgsIn);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(rgsIn, rgsOut);
+        }
     }
 }
