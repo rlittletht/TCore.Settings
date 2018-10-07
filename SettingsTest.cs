@@ -201,8 +201,6 @@ namespace TCore.Settings
             Assert.AreEqual("one", rgs[0]);
             Assert.AreEqual("two", rgs[1]);
 
-            RegistryKey rk;
-
             Registry.CurrentUser.DeleteSubKeyTree("__UnitTestTest_TcoreSettings__");
         }
 
