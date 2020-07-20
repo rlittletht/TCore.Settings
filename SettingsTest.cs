@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 
 namespace TCore.Settings
 {
@@ -167,6 +169,37 @@ namespace TCore.Settings
             Assert.AreEqual(null, o);
         }
 
+        // one of the odd things is that the settings class actually doesn't have ownership
+        // of the data. it relies entirely on the storage provided to it
+        [Test]
+        public void TestObjectOwnership()
+        {
+            Settings ste = new Settings(new SettingsElt[]
+            {
+                new SettingsElt("TestString", Settings.Type.Str, "", ""),
+                new SettingsElt("TestStringArray", Settings.Type.StrArray, new string[]{}, new string[]{})
+            }, "__UnitTestTest_TcoreSettings__", "tag");
+
+            ste.SetSValue("TestString", "foo");
+            Assert.AreEqual("foo", ste.SValue("TestString"));
+
+            string s = "bar";
+            ste.SetSValue("TestString", s);
+            Assert.AreEqual("bar", ste.SValue("TestString"));
+
+            s = "boo";
+            Assert.AreEqual("bar", ste.SValue("TestString"));
+
+            string[] rgs = new string[] {"foo", "bar"};
+
+            ste.SetRgsValue("TestStringArray", rgs);
+            VerifyRgs(new string[] {"foo", "bar"}, ste.RgsValue("TestStringArray"));
+
+            // This demonstrates teh ownership oddity
+            rgs[1] = "baz";
+            VerifyRgs(new string[] {"foo", "baz"}, ste.RgsValue("TestStringArray"));
+        }
+        
         [Test]
         public void TestValueFromKey()
         {

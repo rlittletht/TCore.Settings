@@ -9,6 +9,11 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 
+// NOTE: Callers should be aware of some interesting ownership details. This class doesn't
+// actually allocate storage for values. The storage comes from the caller during set,
+// so objects that can be referenced WILL be referenced AND WILL CHANGE when the caller
+// changes them. (most notably, string arrays). If you don't want this, send in a clone 
+// of the object instead
 namespace TCore.Settings
 {
     public partial class Settings //STE
@@ -409,6 +414,9 @@ namespace TCore.Settings
         {
             object oVal;
 
+            if (oref == null)
+                return null;
+
             if (oref is System.Windows.Forms.TextBox)
                 {
                 oVal = ((System.Windows.Forms.TextBox) oref).Text;
@@ -450,9 +458,12 @@ namespace TCore.Settings
         	
             return a simple list of the subkey names underneath this registry root
         ----------------------------------------------------------------------------*/
-        public static string[] RgsGetSubkeys(string sRegRoot)
+        public static string[] RgsGetSubkeys(string sRegRoot, bool fEnsureExists = false)
         {
             RegistryKey rk = Registry.CurrentUser.OpenSubKey(sRegRoot);
+
+            if (rk == null && fEnsureExists)
+                rk = Registry.CurrentUser.CreateSubKey(sRegRoot);
 
             if (rk != null)
                 {
