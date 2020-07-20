@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("TCore.Settings")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Read and write settings, registry persisted")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("TCore.Settings")]

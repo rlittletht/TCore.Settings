@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Robert Little</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <projectUrl>https://github.com/rlittletht/TCore.Settings/</projectUrl>
+    <description>$description$</description>
+    <copyright>Copyright 2020</copyright>
+  </metadata>
+</package>
