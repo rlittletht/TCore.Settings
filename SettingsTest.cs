@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using NUnit.Framework;
+using NUnit.Framework.Internal;
 
 namespace TCore.Settings
 {
@@ -167,24 +169,133 @@ namespace TCore.Settings
             Assert.AreEqual(null, o);
         }
 
+        // one of the odd things is that the settings class actually doesn't have ownership
+        // of the data. it relies entirely on the storage provided to it
+        [Test]
+        public void TestObjectOwnership()
+        {
+            Settings ste = new Settings(new SettingsElt[]
+            {
+                new SettingsElt("TestString", Settings.Type.Str, "", ""),
+                new SettingsElt("TestStringArray", Settings.Type.StrArray, new string[]{}, new string[]{})
+            }, "__UnitTestTest_TcoreSettings__", "tag");
+
+            ste.SetSValue("TestString", "foo");
+            Assert.AreEqual("foo", ste.SValue("TestString"));
+
+            string s = "bar";
+            ste.SetSValue("TestString", s);
+            Assert.AreEqual("bar", ste.SValue("TestString"));
+
+            s = "boo";
+            Assert.AreEqual("bar", ste.SValue("TestString"));
+
+            string[] rgs = new string[] {"foo", "bar"};
+
+            ste.SetRgsValue("TestStringArray", rgs);
+            VerifyRgs(new string[] {"foo", "bar"}, ste.RgsValue("TestStringArray"));
+
+            // This demonstrates teh ownership oddity
+            rgs[1] = "baz";
+            VerifyRgs(new string[] {"foo", "baz"}, ste.RgsValue("TestStringArray"));
+        }
+        
         [Test]
         public void TestValueFromKey()
         {
             Settings ste = new Settings(new SettingsElt[]
                 {
+                new SettingsElt("TestRgString", Settings.Type.StrArray, new string[] {}, new string[] {}),
                 new SettingsElt("TestString1", Settings.Type.Str, "1", ""),
                 new SettingsElt("TestString2", Settings.Type.Str, "2", ""),
-                new SettingsElt("TestInt161", Settings.Type.Int, (Int16) 1, ""),
+//                new SettingsElt("TestInt161", Settings.Type.Int, (Int16) 1, ""),
                 new SettingsElt("TestInt321", Settings.Type.Int, (Int32) 2, ""),
                 new SettingsElt("TestDttm1", Settings.Type.Dttm, DateTime.Parse("1/1/1901"), ""),
                 },
                                         "__UnitTestTest_TcoreSettings__", "tag");
+            ste.SetRgsValue("TestRgString", new string[] {"one", "two"});
 
+            string[] rgs = ste.RgsValue("TestRgString");
+            Assert.AreEqual("one", rgs[0]);
+            Assert.AreEqual("two", rgs[1]);
             Assert.AreEqual("1", ste.SValue("TestString1"));
-            Assert.AreEqual(1, ste.WValue("TestInt161"));
+            //Assert.AreEqual(1, ste.WValue("TestInt161"));
             Assert.AreEqual(2, ste.NValue("TestInt321"));
             Assert.AreEqual(DateTime.Parse("1/1/1901"), ste.DttmValue("TestDttm1"));
+
+            ste.Save();
+            ste.SetRgsValue("TestRgString", new string[] { "one1", "two1" });
+
+            rgs = ste.RgsValue("TestRgString");
+            Assert.AreEqual("one1", rgs[0]);
+            Assert.AreEqual("two1", rgs[1]);
+            ste.Load();
+            rgs = ste.RgsValue("TestRgString");
+            Assert.AreEqual("one", rgs[0]);
+            Assert.AreEqual("two", rgs[1]);
+
+            Registry.CurrentUser.DeleteSubKeyTree("__UnitTestTest_TcoreSettings__");
         }
 
+        static void VerifyRgs(string[] rgsExpected, string[] rgsActual)
+        {
+            Assert.AreEqual(rgsExpected.Count(), rgsActual.Count());
+            for (int i = 0; i < rgsExpected.Length; i++)
+                Assert.AreEqual(rgsExpected[i], rgsActual[i]);
+        }
+
+        static Settings SteSetupForRgsTest()
+        {
+            return new Settings(new SettingsElt[]
+                                            {
+                                                new SettingsElt("StrArray", Settings.Type.StrArray, new string[] {}, new string[] {})
+                                            }, "__UnitTestTest_TCoreSettings__", "tag");
+        }
+
+        [Test]
+        public void TestSteDefaultRgs()
+        {
+            Settings ste = SteSetupForRgsTest();
+
+            string[] rgsOut = ste.RgsValue("StrArray");
+            Assert.AreEqual(0, rgsOut.Length);
+        }
+
+        [Test]
+        public void TestSetFromRgs()
+        {
+            Settings ste = SteSetupForRgsTest();
+
+            string[] rgsIn = {"one", "two", "three"};
+            string[] rgsOut = ste.RgsValue("StrArray");
+
+            ste.SetRgsValue("StrArray", rgsIn);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(rgsIn, rgsOut);
+        }
+        [Test]
+        public void TestSetFromEnumerable()
+        {
+            Settings ste = SteSetupForRgsTest();
+
+            string[] rgsIn = {"one", "two", "three"};
+            string[] rgsOut = ste.RgsValue("StrArray");
+
+            Dictionary<string, string> mp = new Dictionary<string, string>();
+            foreach (string s in rgsIn)
+                mp.Add(s, s);
+
+            ste.SetRgsValueFromEnumerable("StrArray", mp.Keys);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(mp.Keys.ToArray(), rgsOut);
+
+            ste.SetRgsValueFromEnumerable("StrArray", mp.Values);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(mp.Values.ToArray(), rgsOut);
+
+            ste.SetRgsValueFromEnumerable("StrArray", rgsIn);
+            rgsOut = ste.RgsValue("StrArray");
+            VerifyRgs(rgsIn, rgsOut);
+        }
     }
 }
