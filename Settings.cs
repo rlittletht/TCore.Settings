@@ -5,10 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Win32;
 
 // NOTE: Callers should be aware of some interesting ownership details. This class doesn't

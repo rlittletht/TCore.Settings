@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Diagnostics.Eventing.Reader;
 using System.Reflection;
-using NUnit.Framework;
 
 namespace TCore.Settings
 {
